@@ -2,7 +2,6 @@ import logging
 import time
 import twitch
 import pytest
-import socket
 
 def channel_connection(channel: str):
     with twitch.ChannelConnection(channel) as tw:
@@ -17,7 +16,7 @@ def channel_connection_with_retries(channel: str) -> bool:
             channel_connection(channel)
             ret = True
             break
-        except [TimeoutError, ConnectionError] as e:
+        except (TimeoutError, ConnectionError) as e:
             time.sleep(1)
 
     return ret

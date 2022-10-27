@@ -16,6 +16,7 @@ def build() -> None:
         '--hidden-import', 'pynput.mouse._win32',
         '--add-data', f'{DIRPATH}\\README.md;.',
         '--add-data', f'{DIRPATH}\\katatoRIOT.png;img',
+        '--add-data', f'{DIRPATH}\\config\\config.ini;config',
         '-i', 'katatoRIOT.png',
         #'-n %CurrDirName%',
     ])

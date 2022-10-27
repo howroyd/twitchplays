@@ -3,18 +3,17 @@ VERSION = 0.10
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from time           import sleep
-from dataclasses    import dataclass
 import pathlib
-import multiprocessing as mp
-from threading import Thread
-from typing import Optional
+import time
+from dataclasses    import dataclass
+from typing         import Optional
 
 import pynput.keyboard
 
 import twitch
 import default_config
 import keymap
+import os
 
 def setup_logging(log_level: int = logging.INFO) -> None:
     """Setup the global logger"""
@@ -82,13 +81,12 @@ def message_filter(message: tuple[str, str], key_to_function_map: keymap.Keymap,
     return None
 
 def main() -> None:
-    #mp.freeze_support()
-
     config = default_config.get_from_file()
 
     channel   = config[default_config.ConfigKeys.twitch]['TwitchChannelName'].lower()
     start_key = config[default_config.ConfigKeys.broadcaster]['OutputToggleOnOff']
     log_level = logging.getLevelName(config[default_config.ConfigKeys.logging]['DebugLevel'])
+    print(config['dev.users']['users'])
     dev_users = [user.lower() for user in keymap.split_csv(config['dev.users']['users'])]
 
     setup_logging(log_level)
@@ -116,8 +114,7 @@ def main() -> None:
             pynput.keyboard.Listener(
                     on_press=onOffHandler.press,
                     on_release=onOffHandler.release
-                )):#,
-            #mp.Pool(processes=4) as pool):
+                )):
         logging.info(f"Connected to #{channel}")
 
         while True:
@@ -133,7 +130,7 @@ def main() -> None:
                 if action:
                     action.run()
 
-            sleep(0.01)
+            time.sleep(0.01)
 
 if __name__ == "__main__":
     main()
