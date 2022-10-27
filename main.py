@@ -79,6 +79,7 @@ def message_filter(message: tuple[str, str], key_to_function_map: keymap.Keymap,
                 else:
                     if username.lower() in dev_users:
                         return command
+                    print("Dev command only")
     return None
 
 def main() -> None:
@@ -116,8 +117,7 @@ def main() -> None:
             pynput.keyboard.Listener(
                     on_press=onOffHandler.press,
                     on_release=onOffHandler.release
-                )):#,
-            #mp.Pool(processes=4) as pool):
+                )):
         logging.info(f"Connected to #{channel}")
 
         while True:

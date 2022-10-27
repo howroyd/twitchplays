@@ -18,7 +18,7 @@ class Command:
     duration: float = 0
     repeats: int = 1
     cooldown: Optional[float] = None
-    random_chance: Optional[int] = None # TODO
+    random_chance: Optional[int] = None
     enabled: bool = True
     is_dev_command: bool = False
 
@@ -113,10 +113,10 @@ def split_csv(keys: str, delimiter: str = ',') -> list[str]:
     return [s.strip() for s in keys.split(delimiter)]
 
 
-def make_mouse_keymap(config: ConfigParser) -> Keymap:
+def make_mouse_keymap(config: ConfigParser, section: str = None, is_dev: bool = False) -> Keymap:
     ret = []
 
-    for k, v in config['mouse.chat.commands'].items():
+    for k, v in config[section or 'mouse.chat.commands'].items():
         commands, actions = (split_csv(k, ','), split_csv(v, ','))
 
         actions_splitted = actions[0].split()
@@ -131,6 +131,9 @@ def make_mouse_keymap(config: ConfigParser) -> Keymap:
             if command_key:
                 kwargs[command_key] = float(kwarg_value) # FIXME sanitise this cast
 
+        if is_dev:
+            kwargs["is_dev_command"] = True
+
         ret.append(Command(commands,
                             MouseOutputs.press_release_routine,
                             button,
@@ -139,10 +142,10 @@ def make_mouse_keymap(config: ConfigParser) -> Keymap:
 
     return ret
 
-def make_keyboard_keymap(config: ConfigParser) -> Keymap:
+def make_keyboard_keymap(config: ConfigParser, section: str = None, is_dev: bool = False) -> Keymap:
     ret = []
 
-    for k, v in config['keyboard.chat.commands'].items():
+    for k, v in config[section or 'keyboard.chat.commands'].items():
         commands, actions = (split_csv(k, ','), split_csv(v, ','))
 
         button = actions[0]
@@ -153,6 +156,8 @@ def make_keyboard_keymap(config: ConfigParser) -> Keymap:
             command_key = Command.tag_to_arg(kwarg_key)
             if command_key:
                 kwargs[command_key] = float(kwarg_value) # FIXME sanitise this cast
+        if is_dev:
+            kwargs["is_dev_command"] = True
 
         ret.append(Command(commands,
                             KeyboardOutputs.press_release_routine,
@@ -162,8 +167,13 @@ def make_keyboard_keymap(config: ConfigParser) -> Keymap:
 
     return ret
 
+def make_dev_keymap(config: ConfigParser) -> Keymap:
+    keyboard_keymap = make_keyboard_keymap(config, "dev.chat.commands.keyboard", is_dev = True)
+    mouse_keymap = make_mouse_keymap(config, "dev.chat.commands.mouse", is_dev = True)
+    return keyboard_keymap + mouse_keymap
+
 def make_keymap_entry(config: ConfigParser) -> Keymap:
-    return make_keyboard_keymap(config) + make_mouse_keymap(config)
+    return make_keyboard_keymap(config) + make_mouse_keymap(config) + make_dev_keymap(config)
 
 def log_keymap(keymap: Keymap, to_console = False) -> str:
     out_fn = logging.debug if not to_console else print
