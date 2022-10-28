@@ -13,7 +13,6 @@ import pynput.keyboard
 import twitch
 import default_config
 import keymap
-import os
 
 def setup_logging(log_level: int = logging.INFO) -> None:
     """Setup the global logger"""
