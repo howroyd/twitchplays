@@ -2,10 +2,10 @@ import logging
 import random, math
 
 from time import sleep
-from threading import Thread
-from typing import Union
-
-from pynput.keyboard import Key
+#from threading import Thread
+#from typing import Union
+#
+#from pynput.keyboard import Key
 from pynput.keyboard import Controller as Keyboard
 
 from pynput.mouse._win32 import Button
