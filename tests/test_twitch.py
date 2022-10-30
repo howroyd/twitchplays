@@ -2,28 +2,25 @@ import logging
 import time
 import twitch
 import pytest
-import socket
 
 def channel_connection(channel: str):
     with twitch.ChannelConnection(channel) as tw:
         pass
 
-def channel_connection_with_retries(channel: str) -> bool:
-    n_retries = 4
+def channel_connection_with_retries(channel: str, n_retries: int = 4):
     ret = False
 
-    for i in range(n_retries):
+    for _ in range(n_retries):
         try:
             channel_connection(channel)
             ret = True
             break
-        except [TimeoutError, ConnectionError] as e:
+        except (TimeoutError, ConnectionError) as e:
             time.sleep(1)
-
     return ret
 
-def test_channel_connection(n_retries: int = 4) -> None:
-    assert channel_connection_with_retries("katatouille93"), "test_channel_connection failed"
+def test_channel_connection(n_retries: int = 10):
+    assert channel_connection_with_retries("katatouille93", n_retries=n_retries), "test_channel_connection failed"
 
     with pytest.raises(TimeoutError):
         channel_connection("")

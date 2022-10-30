@@ -3,12 +3,10 @@ VERSION = 0.10
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from time           import sleep
-from dataclasses    import dataclass
 import pathlib
-import multiprocessing as mp
-from threading import Thread
-from typing import Optional
+import time
+from dataclasses    import dataclass
+from typing         import Optional
 
 import pynput.keyboard
 
@@ -91,6 +89,7 @@ def main() -> None:
     start_key = config[default_config.ConfigKeys.broadcaster]['OutputToggleOnOff']
     log_level = logging.getLevelName(config[default_config.ConfigKeys.logging]['DebugLevel'])
     dev_users = [user.lower() for user in keymap.split_csv(config['dev.users']['users'])]
+    print(f"Dev users: {dev_users}")
 
     setup_logging(log_level)
     mykeymap = keymap.make_keymap_entry(config)
@@ -133,7 +132,7 @@ def main() -> None:
                 if action:
                     action.run()
 
-            sleep(0.01)
+            time.sleep(0.01)
 
 if __name__ == "__main__":
     main()
