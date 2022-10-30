@@ -81,8 +81,6 @@ def message_filter(message: tuple[str, str], key_to_function_map: keymap.Keymap,
     return None
 
 def main() -> None:
-    #mp.freeze_support()
-
     config = default_config.get_from_file()
 
     channel   = config[default_config.ConfigKeys.twitch]['TwitchChannelName'].lower()
@@ -90,10 +88,13 @@ def main() -> None:
     log_level = logging.getLevelName(config[default_config.ConfigKeys.logging]['DebugLevel'])
     dev_users = [user.lower() for user in keymap.split_csv(config['dev.users']['users'])]
     print(f"Dev users: {dev_users}")
+    print(f"Dev commands: {[(k,v) for k,v in config['''dev.chat.commands'''].items()]}")
 
     setup_logging(log_level)
     mykeymap = keymap.make_keymap_entry(config)
     keymap.log_keymap(mykeymap)
+    
+    #default_config.edit_line("notteabag", "cd:69.0")
 
     print_preamble(start_key, mykeymap)
 
@@ -129,8 +130,8 @@ def main() -> None:
 
                 action = message_filter((msg.username, message_text), mykeymap, dev_users=dev_users) #TODO re-enable this or quit.... | keymap.easter_eggs)
 
-                if action:
-                    action.run()
+                if action and is_active.state:
+                    action.run(message_text)
 
             time.sleep(0.01)
 

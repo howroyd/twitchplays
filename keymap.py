@@ -7,31 +7,66 @@ from types import FunctionType
 from typing import Callable, Optional
 from configparser import ConfigParser
 from outputs import KeyboardOutputs, MouseOutputs, LogOutputs, PrintOutputs
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fields
 import random
+
+def handle_dev_command(message: str):
+    match message:
+        case "edit":
+            print(f"Edit dev command: {message}")
+        case "add":
+            print(f"Add dev command: {message}")
+        case "move":
+            print(f"Mode dev command: {message}")
+        case "undo":
+            print(f"Undo dev command: {message}")
+        case _:
+            print(f"Unknown dev command: {message}")
+
+@dataclass
+class DevCommand:
+    keys: list[str]
+    commands: list[str]
+    is_dev_command = True
+    fn: Callable = handle_dev_command
+
+    def run(self, message: str) -> bool:
+        self.fn(message.split(maxsplit=1)[1])
+        return True
 
 @dataclass
 class Command:
     keys: list[str]
     fn: Callable
     button: str
-    duration: float = 0
-    repeats: int = 1
+    duration: Optional[float] = None
+    repeats: Optional[int] = None
     cooldown: Optional[float] = None
     random_chance: Optional[int] = None
+
     enabled: bool = True
     is_dev_command: bool = False
 
     last_run: float = 0
     is_running: bool = False # TODO this needs to be a mutex
 
+    def __post_init__(self):
+        if self.duration and not isinstance(self.duration, float):
+            self.duration = float(self.duration)
+        if self.repeats and not isinstance(self.repeats, int):
+            self.repeats = int(self.repeats)
+        if self.cooldown and not isinstance(self.cooldown, float):
+            self.cooldown = float(self.cooldown)
+        if self.random_chance and not isinstance(self.random_chance, int):
+            self.random_chance = int(self.random_chance)
+
     @staticmethod
     def tags_to_arg_dict() -> dict:
         return {
             "cd": "cooldown",
-            "d": "duration", # from API
-            "n": "repeats", # from API
-            "r": "random_chance"
+            "d":  "duration", # from API
+            "n":  "repeats", # from API
+            "r":  "random_chance"
         }
 
     @classmethod
@@ -73,13 +108,13 @@ class Command:
 
             def fn() -> None:
                 self.is_running = True
-                self.fn(self.button, self.duration, int(self.repeats)) # TODO kwargs?
+                self.fn(self.button, self.duration, self.repeats) # TODO kwargs?
                 self.is_running = False
 
             return fn
         return None
 
-    def run(self) -> bool:
+    def run(self, message: str = None) -> bool:
         runner = self.get_runner()
         if runner:
             Thread(target=runner).start()
@@ -93,7 +128,7 @@ def execute_runners(runners: list[Callable]):
         thread.join()
         # TODO this will need to lock the commands for the duration of the whole thing
 
-Keymap = list[Command]
+Keymap = list[Command | DevCommand]
 
 MOUSE_COMMAND_MAP = {
     "lmb": "left",
@@ -121,7 +156,7 @@ def make_mouse_keymap(config: ConfigParser, section: str = None, is_dev: bool = 
 
         actions_splitted = actions[0].split()
         actions[0] = [MOUSE_COMMAND_MAP[actions_splitted[0]]] + actions_splitted[1:]
-        button = actions[0]
+        button = " ".join(actions[0])
         args = actions[1:]
 
         kwargs = {}
@@ -167,19 +202,39 @@ def make_keyboard_keymap(config: ConfigParser, section: str = None, is_dev: bool
 
     return ret
 
+def make_dev_commmands_keymap(config: ConfigParser, section: str = None, is_dev: bool = False) -> Keymap:
+    ret = []
+
+    for k, v in config[section or 'dev.chat.commands'].items():
+        commands, subcommands = (split_csv(k, ','), split_csv(v, ','))
+
+        ret.append(DevCommand(commands, subcommands))
+
+    return ret
+
 def make_dev_keymap(config: ConfigParser) -> Keymap:
+    dev_keymap = make_dev_commmands_keymap(config, "dev.chat.commands", is_dev = True)
     keyboard_keymap = make_keyboard_keymap(config, "dev.chat.commands.keyboard", is_dev = True)
     mouse_keymap = make_mouse_keymap(config, "dev.chat.commands.mouse", is_dev = True)
-    return keyboard_keymap + mouse_keymap
+    return keyboard_keymap + mouse_keymap + dev_keymap
 
 def make_keymap_entry(config: ConfigParser) -> Keymap:
     return make_keyboard_keymap(config) + make_mouse_keymap(config) + make_dev_keymap(config)
 
 def log_keymap(keymap: Keymap, to_console = False) -> str:
     out_fn = logging.debug if not to_console else print
-    rep = ""
+    public = ""
+    dev = ""
     for command in keymap:
-        rep = rep + f"{command.keys} => button={command.button}, duration={command.duration}, cooldown={command.cooldown or 0}sec, repeats={command.repeats}, random_chance={command.random_chance or 100}%, enabled={command.enabled}\n"
+        if isinstance(command, Command):
+            temp = f"{command.keys} => button={command.button}, duration={command.duration}, cooldown={command.cooldown}sec, repeats={command.repeats}, random_chance={command.random_chance or 100}%, enabled={command.enabled}\n"
+            if not command.is_dev_command:
+                public = public + temp
+            else:
+                dev = dev + temp
+        elif isinstance(command, DevCommand):
+            dev = dev + f"{command.keys} => subcommands={command.commands}\n"
+    rep = f"Public Commands:\n{public}\nDev Commands:\n{dev}"
     out_fn(rep)
     return rep
 

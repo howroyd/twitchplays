@@ -1,7 +1,7 @@
 import logging
 import random, math
 
-from time import sleep
+from time import sleep, time_ns
 #from threading import Thread
 #from typing import Union
 #
@@ -28,7 +28,7 @@ def str_to_button(button: str) -> Button:
 class KeyboardOutputs:
     @staticmethod
     def press_release_routine(key: str, duration: float, repeats: int) -> None:
-        for _ in range(repeats):
+        for _ in range(repeats or 1):
             logging.info(f"Press keyboard {key} then wait {duration:.2f}s") # TODO tidy n repeats
             keyboard.press(key)
             sleep(duration / 2)
@@ -66,19 +66,21 @@ class KeyboardOutputs:
 
 class MouseOutputs:
     @staticmethod
-    def press_release_routine(button: list[str], duration: float = 0.01, repeats: int = 1) -> None:
+    def press_release_routine(button: str, duration: float = 0.01, repeats: int = 1) -> None:
+        button = button.split()
         if 1 == len(button):
-            for _ in range(repeats):
+            for _ in range(repeats or 1):
                 logging.info(f"Press mouse {button[0]} for {duration:.2f}s")
                 mouse.press(str_to_button(button[0]))
-                sleep(duration)
+                sleep(duration or 0.01)
                 mouse.release(str_to_button(button[0]))
         else:
             coords = (int(button[1]), int(button[2])) # TODO sanitise cast
             MouseOutputs.move_routine(coords, duration)
-            
+
     @staticmethod
-    def move_routine(coords: tuple[int, int], duration: float) -> None:
+    def move_routine(coords: tuple[int, int], duration: float = 0.5, randomise: bool = False) -> None:
+        duration = duration or 0.5
         x, y = coords
         if x:
             x = random.randint(x//2 - abs(x//2), x + abs(x//2))
@@ -87,12 +89,16 @@ class MouseOutputs:
 
         print(f"{x=} {y=}")
 
-        steps = max(abs(x/100), abs(y/100))
+        steps = max(abs(x/10), abs(y/10))
         timestep = duration / steps
+        
         logging.info(f"Move mouse by x={x}, y={y} in {duration}s ({steps} steps {timestep}s apart)")
+        
+        start = time_ns()
         for _ in range(int(steps)):
             mouse.move(int(x / steps), int(y / steps))
             sleep(timestep)
+        logging.info(f"Move mouse done in {(time_ns() - start) / 10**9}s ({duration}s)")
 
     @staticmethod
     def move(x: int, y: int) -> None:
