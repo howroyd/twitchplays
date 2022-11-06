@@ -10,18 +10,23 @@ from outputs import KeyboardOutputs, MouseOutputs, LogOutputs, PrintOutputs
 from dataclasses import dataclass, fields
 import random
 
-def handle_dev_command(message: str):
+def handle_dev_command(message: str) -> bool:
     match message:
         case "edit":
             print(f"Edit dev command: {message}")
+            return True
         case "add":
             print(f"Add dev command: {message}")
+            return True
         case "move":
             print(f"Mode dev command: {message}")
+            return True
         case "undo":
             print(f"Undo dev command: {message}")
+            return True
         case _:
             print(f"Unknown dev command: {message}")
+            return False
 
 @dataclass
 class DevCommand:
@@ -31,8 +36,7 @@ class DevCommand:
     fn: Callable = handle_dev_command
 
     def run(self, message: str) -> bool:
-        self.fn(message.split(maxsplit=1)[1])
-        return True
+        return self.fn(message.split(maxsplit=1)[1])
 
 @dataclass
 class Command:
@@ -202,23 +206,23 @@ def make_keyboard_keymap(config: ConfigParser, section: str = None, is_dev: bool
 
     return ret
 
-def make_dev_commmands_keymap(config: ConfigParser, section: str = None, is_dev: bool = False) -> Keymap:
+def make_dev_commmands_keymap(config: ConfigParser, section: str = None, is_dev: bool = False, dev_command_handler: Callable = handle_dev_command) -> Keymap:
     ret = []
 
     for k, v in config[section or 'dev.chat.commands'].items():
         commands, subcommands = (split_csv(k, ','), split_csv(v, ','))
 
-        ret.append(DevCommand(commands, subcommands))
+        ret.append(DevCommand(commands, subcommands, fn=dev_command_handler))
 
     return ret
 
-def make_dev_keymap(config: ConfigParser) -> Keymap:
+def make_dev_keymap(config: ConfigParser, dev_command_handler: Callable = handle_dev_command) -> Keymap:
     dev_keymap = make_dev_commmands_keymap(config, "dev.chat.commands", is_dev = True)
     keyboard_keymap = make_keyboard_keymap(config, "dev.chat.commands.keyboard", is_dev = True)
     mouse_keymap = make_mouse_keymap(config, "dev.chat.commands.mouse", is_dev = True)
     return keyboard_keymap + mouse_keymap + dev_keymap
 
-def make_keymap_entry(config: ConfigParser) -> Keymap:
+def make_keymap_entry(config: ConfigParser, dev_command_handler: Optional[Callable] = None) -> Keymap:
     return make_keyboard_keymap(config) + make_mouse_keymap(config) + make_dev_keymap(config)
 
 def log_keymap(keymap: Keymap, to_console = False) -> str:

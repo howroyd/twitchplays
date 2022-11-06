@@ -5,7 +5,7 @@
 		}
 	],
 	"settings": {
-		"editor.fontSize": 13,
+		"editor.fontSize": 15,
 		"window.zoomLevel": 1.5
 	},
 	"launch": {

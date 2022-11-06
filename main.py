@@ -80,6 +80,7 @@ def message_filter(message: tuple[str, str], key_to_function_map: keymap.Keymap,
                     print("Dev command only")
     return None
 
+
 def main() -> None:
     config = default_config.get_from_file()
 
@@ -90,10 +91,40 @@ def main() -> None:
     print(f"Dev users: {dev_users}")
     print(f"Dev commands: {[(k,v) for k,v in config['''dev.chat.commands'''].items()]}")
 
+    def handle_dev_command(message: str) -> Optional[keymap.Keymap]:
+        config_changed = False
+
+        match message:
+            case "edit":
+                print(f"Edit dev command: {message}")
+                # change_config()
+                config_changed = True
+            case "add":
+                print(f"Add dev command: {message}")
+                config_changed = True
+            case "move":
+                print(f"Mode dev command: {message}")
+                config_changed = True
+            case "undo":
+                print(f"Undo dev command: {message}")
+                config_changed = True
+            case _:
+                print(f"Unknown dev command: {message}")
+
+        if config_changed:
+            config = default_config.get_from_file()
+            channel   = config[default_config.ConfigKeys.twitch]['TwitchChannelName'].lower()
+            start_key = config[default_config.ConfigKeys.broadcaster]['OutputToggleOnOff']
+            log_level = logging.getLevelName(config[default_config.ConfigKeys.logging]['DebugLevel'])
+            dev_users = [user.lower() for user in keymap.split_csv(config['dev.users']['users'])]
+            return keymap.make_keymap_entry(config, dev_command_handler=handle_dev_command)
+        return None
+
     setup_logging(log_level)
-    mykeymap = keymap.make_keymap_entry(config)
+    mykeymap = keymap.make_keymap_entry(config, dev_command_handler=handle_dev_command)
     keymap.log_keymap(mykeymap)
-    
+
+
     #default_config.edit_line("notteabag", "cd:69.0")
 
     print_preamble(start_key, mykeymap)
@@ -131,7 +162,10 @@ def main() -> None:
                 action = message_filter((msg.username, message_text), mykeymap, dev_users=dev_users) #TODO re-enable this or quit.... | keymap.easter_eggs)
 
                 if action and is_active.state:
-                    action.run(message_text)
+                    new_keymap: Optional[keymap.Keymap] = action.run(message_text)
+                    if new_keymap:
+                        mykeymap = new_keymap
+
 
             time.sleep(0.01)
 
