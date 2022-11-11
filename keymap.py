@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 
 import time
@@ -8,25 +9,38 @@ from typing import Callable, Optional
 from configparser import ConfigParser
 from outputs import KeyboardOutputs, MouseOutputs, LogOutputs, PrintOutputs
 from dataclasses import dataclass, fields
+import default_config
+
 import random
 
-def handle_dev_command(message: str) -> bool:
+def handle_dev_command(message: str, _keymap: Keymap) -> None:
+    config_changed = False
+
     match message:
         case "edit":
             print(f"Edit dev command: {message}")
-            return True
+            # change_config()
+            config_changed = True
         case "add":
             print(f"Add dev command: {message}")
-            return True
+            config_changed = True
         case "move":
             print(f"Mode dev command: {message}")
-            return True
+            config_changed = True
         case "undo":
             print(f"Undo dev command: {message}")
-            return True
+            config_changed = True
         case _:
             print(f"Unknown dev command: {message}")
-            return False
+
+    if config_changed:
+        config = default_config.get_from_file()
+        # channel   = config[default_config.ConfigKeys.twitch]['TwitchChannelName'].lower()
+        # start_key = config[default_config.ConfigKeys.broadcaster]['OutputToggleOnOff']
+        # log_level = logging.getLevelName(config[default_config.ConfigKeys.logging]['DebugLevel'])
+        # dev_users = [user.lower() for user in keymap.split_csv(config['dev.users']['users'])]
+        make_keymap_entry(config, dev_command_handler=handle_dev_command, orig=_keymap)
+    return None
 
 @dataclass
 class DevCommand:
@@ -35,8 +49,8 @@ class DevCommand:
     is_dev_command = True
     fn: Callable = handle_dev_command
 
-    def run(self, message: str) -> bool:
-        return self.fn(message.split(maxsplit=1)[1])
+    def run(self, message: str, orig: Keymap = None) -> bool:
+        return self.fn(message.split(maxsplit=1)[1], orig)
 
 @dataclass
 class Command:
@@ -118,7 +132,7 @@ class Command:
             return fn
         return None
 
-    def run(self, message: str = None) -> bool:
+    def run(self, message: str = None, orig: Keymap = None) -> bool:
         runner = self.get_runner()
         if runner:
             Thread(target=runner).start()
@@ -222,8 +236,12 @@ def make_dev_keymap(config: ConfigParser, dev_command_handler: Callable = handle
     mouse_keymap = make_mouse_keymap(config, "dev.chat.commands.mouse", is_dev = True)
     return keyboard_keymap + mouse_keymap + dev_keymap
 
-def make_keymap_entry(config: ConfigParser, dev_command_handler: Optional[Callable] = None) -> Keymap:
-    return make_keyboard_keymap(config) + make_mouse_keymap(config) + make_dev_keymap(config)
+def make_keymap_entry(config: ConfigParser, dev_command_handler: Optional[Callable] = None, orig: Keymap = None) -> Keymap:
+    new_keymap = make_keyboard_keymap(config) + make_mouse_keymap(config) + make_dev_keymap(config)
+    if orig:
+        orig.clear()
+        orig.extend(new_keymap)
+    return new_keymap
 
 def log_keymap(keymap: Keymap, to_console = False) -> str:
     out_fn = logging.debug if not to_console else print

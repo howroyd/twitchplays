@@ -2,10 +2,6 @@ import logging
 import random, math
 
 from time import sleep, time_ns
-#from threading import Thread
-#from typing import Union
-#
-#from pynput.keyboard import Key
 from pynput.keyboard import Controller as Keyboard
 
 from pynput.mouse._win32 import Button
@@ -35,35 +31,6 @@ class KeyboardOutputs:
             keyboard.release(key)
             sleep(duration / 2)
 
-    # @staticmethod
-    # def press_key_for(key: str, seconds: float = None) -> None:
-    #     if seconds:
-    #         logging.info(f"Press keyboard {key} for {seconds:.2f}s")
-    #         keyboard.press(key)
-    #         x = Thread(target=__class__._release_later, args=(key, seconds))
-    #         x.start()
-    #     else:
-    #         logging.info(f"Press keyboard {key}")
-    #         keyboard.press(key)
-    #         keyboard.release(key)
-
-    # @staticmethod
-    # def press_key(key: str) -> None:
-    #     __class__.press_key_for(key)
-
-    # @staticmethod
-    # def _release_later(key: str, seconds: float = None) -> None:
-    #     sleep(seconds)
-    #     logging.info(f"Releasing {key}")
-    #     keyboard.release(key)
-
-    # @staticmethod
-    # def _release(key: str) -> None:
-    #     __class__._release_later(key)
-
-
-
-
 class MouseOutputs:
     @staticmethod
     def press_release_routine(button: str, duration: float = 0.01, repeats: int = 1) -> None:
@@ -91,9 +58,9 @@ class MouseOutputs:
 
         steps = max(abs(x/10), abs(y/10))
         timestep = duration / steps
-        
+
         logging.info(f"Move mouse by x={x}, y={y} in {duration}s ({steps} steps {timestep}s apart)")
-        
+
         start = time_ns()
         for _ in range(int(steps)):
             mouse.move(int(x / steps), int(y / steps))
@@ -104,17 +71,6 @@ class MouseOutputs:
     def move(x: int, y: int) -> None:
         logging.info(f"Move mouse by x={x}, y={y}")
         mouse.move(x, y)
-
-    # @staticmethod
-    # def _release_later(button: str, seconds: float = None) -> None:
-    #     pybutton = str_to_button(button)
-    #     sleep(seconds)
-    #     logging.info(f"Releasing {button}")
-    #     mouse.release(pybutton)
-
-    # @staticmethod
-    # def _release(button: str) -> None:
-    #     __class__._release_later(button)
 
 class LogOutputs:
     @staticmethod
