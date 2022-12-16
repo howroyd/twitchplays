@@ -1,0 +1,73 @@
+channel = "drgreengiant"
+pause = "<shift>+<backspace>"
+startstate = true # `true` means start enabled, `false` means start disabled
+
+[command]
+[command.forward]
+chat = "forwardsssssss"
+device = "keyboard"
+key = "w"
+cooldown = 1
+duration = 3
+random = 50
+
+[command.left]
+chat = "left"
+device = "keyboard"
+key = "a"
+cooldown = 1
+duration = 3
+
+[command.right]
+chat = "right"
+device = "keyboard"
+key = "d"
+cooldown = 1
+duration = 3
+
+[command.lookleft]
+chat = "look left"
+device = "mouse"
+move = [-500, 0]
+cooldown = 1
+
+[command.lookright]
+chat = "look right"
+device = "mouse"
+move = [500, 0]
+cooldown = 1
+
+[command.clickpress]
+device = "mouse"
+button = "left"
+[command.clickrelease]
+device = "mouse"
+button = "left"
+
+[command.click]
+chat = "click, lmb"
+cooldown = 1
+using = ["clickpress", "clickrelease"]
+
+[command.use]
+chat = "use, rmb"
+device = "mouse"
+button = "right"
+cooldown = 1
+
+[command.spin]
+chat = "spin"
+using = ["lookright"]
+repeat = "random"
+repeatMin = 3
+repeatMax = 6
+cooldown = 1
+
+[command.lookrightforward]
+using = ["lookright", "forward"]
+concurrent = true
+
+[command.opendoor]
+chat = "door"
+using = ["clickpress", "lookrightforward", "clickrelease", "lookleft"]
+cooldown = 1
